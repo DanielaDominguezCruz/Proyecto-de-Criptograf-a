@@ -1,0 +1,4 @@
+# Ejemplo de configuración de DB (no subir credenciales reales)
+db.url=jdbc:mysql://localhost:3306/simulador_ataques
+db.user=usuario
+db.password=contraseña

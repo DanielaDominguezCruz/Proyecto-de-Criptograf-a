@@ -1,0 +1,1 @@
+Aquí Scarlet subirá la implementación de ataques.
