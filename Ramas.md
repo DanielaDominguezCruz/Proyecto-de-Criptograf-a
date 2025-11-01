@@ -4,4 +4,4 @@
 |-------|--------------|-------------|
 | `feature/daniela-control-principal` | **Daniela** | Control general del simulador |
 | `feature/scarlet-ataques` | **Scarlet** | Ataques de fuerza bruta y diccionario |
-| `feature/jaz-base-datos` | **Jaz** | Conexión JDBC y almacenamiento de registros |
+| `feature/jaz-base-datos` | **Jazmin** | Conexión JDBC y almacenamiento de registros |
