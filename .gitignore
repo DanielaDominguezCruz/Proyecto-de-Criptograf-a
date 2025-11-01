@@ -1,0 +1,40 @@
+# =========================================================
+# 🚫 ARCHIVOS A IGNORAR - PROYECTO SIMULADOR DE ATAQUES  
+# =========================================================
+
+# --- Carpetas y archivos generados por NetBeans ---
+nbproject/private/
+build/
+dist/
+*.class
+
+# --- Archivos de configuración del entorno local ---
+*.log
+*.tmp
+*.bak
+
+# --- Archivos del sistema operativo ---
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# --- Configuraciones sensibles (no subir contraseñas) ---
+config.properties
+*.keystore
+
+# --- Carpetas de IDEs alternativos (por si alguien usa otros) ---
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# --- Archivos de Maven o Gradle (si algún día lo usan) ---
+target/
+out/
+*.war
+*.ear
+
+# --- Respaldos de base de datos (no subir dumps con datos reales) ---
+*.sql
+*.db
+*.sqlite
