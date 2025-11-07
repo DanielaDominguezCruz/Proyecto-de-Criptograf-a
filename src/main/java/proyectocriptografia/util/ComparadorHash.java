@@ -4,14 +4,18 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 
 /**
- * Utilidad de hashing y verificación.
+ * Clase de utilidad para operaciones de hashing y comparacion de valores usando SHA-256.
  */
 public final class ComparadorHash {
 
+    /** Constructor privado para evitar instanciacion. */
     private ComparadorHash(){}
 
     /**
-     * Calcula SHA-256 en hexadecimal minúsculas.
+     * Calcula el hash SHA-256 de un texto y devuelve su representacion en hexadecimal minusculas.
+     * @param texto texto de entrada a hashear
+     * @return hash SHA-256 en formato hexadecimal minusculas
+     * @throws IllegalStateException si ocurre un error al calcular el hash
      */
     public static String sha256(String texto) {
         try {
@@ -24,7 +28,10 @@ public final class ComparadorHash {
     }
 
     /**
-     * Compara un candidato en texto plano contra un hash SHA-256 esperado.
+     * Compara un texto plano con un hash SHA-256 esperado.
+     * @param candidato texto plano que se desea verificar
+     * @param hashEsperado hash SHA-256 esperado en formato hexadecimal
+     * @return true si el hash del texto coincide con el hash esperado, false en caso contrario
      */
     public static boolean coincideSha256(String candidato, String hashEsperado) {
         return sha256(candidato).equalsIgnoreCase(hashEsperado);
