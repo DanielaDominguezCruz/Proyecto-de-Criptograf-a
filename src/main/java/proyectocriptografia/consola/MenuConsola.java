@@ -65,8 +65,8 @@ public class MenuConsola {
                 return;
             }
 
-            int min = leerInt("Longitud minima [1]: ", 1);
-            int max = leerInt("Longitud maxima [3]: ", 3);
+            int min = leerInt("Longitud minima: ", 1);
+            int max = leerInt("Longitud maxima: ", 3);
             if (min < 1) min = 1;
             if (max < min) {
                 System.out.println("Longitud maxima menor que minima. Se ajusta max = min.");
@@ -130,8 +130,8 @@ public class MenuConsola {
 
             List<String> dic = Files.readAllLines(Path.of(ruta));
 
-            long muestral = leerLong("Guardar intento muestral cada N (0=desactiva) [0]: ", 0L);
-            long limite = leerLong("Limite de tiempo en ms (0=sin limite) [0]: ", 0L);
+            long muestral = leerLong("Guardar intento muestral cada N (0=desactiva): ", 0L);
+            long limite = leerLong("Limite de tiempo en ms (0=sin limite): ", 0L);
 
             ParametrosAtaque p = new ParametrosAtaque();
             p.hashObjetivo = hash;
