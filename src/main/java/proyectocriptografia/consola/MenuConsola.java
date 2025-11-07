@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Interfaz de texto del simulador.
- * Version sin acentos y con validaciones de entrada.
+ * Clase que implementa el menu de consola para ejecutar y consultar simulaciones
+ * de ataques de fuerza bruta y diccionario.
  */
 public class MenuConsola {
     private final ServicioSimulacion servicio = new ServicioSimulacion();
@@ -46,7 +46,7 @@ public class MenuConsola {
     }
 
     /**
-     * Ejecuta la opcion de ataque de fuerza bruta solicitando los parametros al usuario.
+     * Ejecuta el ataque de fuerza bruta solicitando los parametros al usuario.
      * Incluye validaciones de entrada y valores por defecto cuando el usuario presiona Enter.
      */
     private void opcionFuerzaBruta() {
@@ -92,8 +92,8 @@ public class MenuConsola {
     }
 
     /**
-     * Ejecuta la opcion de ataque de diccionario.
-     * Valida la ruta del archivo, verifica permisos, y evita valores vacios para los parametros numericos.
+     * Ejecuta el ataque de diccionario solicitando los parametros al usuario.
+     * Valida la ruta del archivo, verifica permisos y evita valores vacios para parametros numericos.
      */
     private void opcionDiccionario() {
         try {
@@ -104,7 +104,6 @@ public class MenuConsola {
                 return;
             }
 
-            // Pedir y validar ruta en bucle
             String ruta;
             while (true) {
                 System.out.print("Ruta del diccionario (txt, una palabra por linea): ");
@@ -126,11 +125,9 @@ public class MenuConsola {
                     System.out.println("La ruta indicada es un directorio, debe ser un archivo .txt: " + ruta);
                     continue;
                 }
-                // Si pasamos todas las comprobaciones, salimos del bucle
                 break;
             }
 
-            // Leer el diccionario
             List<String> dic = Files.readAllLines(Path.of(ruta));
 
             long muestral = leerLong("Guardar intento muestral cada N (0=desactiva) [0]: ", 0L);
@@ -150,7 +147,7 @@ public class MenuConsola {
     }
 
     /**
-     * Lista todas las simulaciones registradas mostrando sus datos principales.
+     * Lista las simulaciones registradas mostrando su informacion basica.
      */
     private void listar() {
         var sims = servicio.consultarSimulaciones();
@@ -165,7 +162,7 @@ public class MenuConsola {
     }
 
     /**
-     * Muestra el detalle de una simulacion especifica segun su ID.
+     * Muestra los intentos muestrales de una simulacion segun su ID.
      */
     private void detalle() {
         try {
@@ -188,7 +185,7 @@ public class MenuConsola {
     }
 
     /**
-     * Calcula y muestra el hash SHA-256 de un texto ingresado por el usuario.
+     * Calcula el hash SHA-256 de un texto ingresado por el usuario y lo muestra por consola.
      */
     private void hashDeTexto(){
         System.out.print("Texto a hashear: ");
@@ -197,7 +194,7 @@ public class MenuConsola {
     }
 
     /**
-     * Imprime el resultado de una simulacion finalizada.
+     * Imprime el resultado completo de una simulacion.
      * @param s objeto Simulacion con los datos del resultado
      */
     private void imprimirResultado(Simulacion s){
@@ -215,10 +212,11 @@ public class MenuConsola {
     }
 
     /**
-     * Lee un entero desde consola. Si el usuario pulsa Enter devuelve el valor por defecto.
-     * @param prompt mensaje que se muestra al usuario
+     * Lee un numero entero desde la entrada estandar.
+     * Si el usuario presiona Enter, devuelve el valor por defecto.
+     * @param prompt mensaje mostrado al usuario
      * @param defecto valor por defecto si no se ingresa nada
-     * @return entero leido o valor por defecto
+     * @return entero ingresado o el valor por defecto
      */
     private int leerInt(String prompt, int defecto) {
         System.out.print(prompt);
@@ -232,10 +230,11 @@ public class MenuConsola {
     }
 
     /**
-     * Lee un valor long desde consola. Si el usuario pulsa Enter devuelve el valor por defecto.
-     * @param prompt mensaje que se muestra al usuario
+     * Lee un numero long desde la entrada estandar.
+     * Si el usuario presiona Enter, devuelve el valor por defecto.
+     * @param prompt mensaje mostrado al usuario
      * @param defecto valor por defecto si no se ingresa nada
-     * @return valor long leido o el valor por defecto
+     * @return numero long ingresado o el valor por defecto
      */
     private long leerLong(String prompt, long defecto) {
         System.out.print(prompt);
