@@ -13,12 +13,15 @@ import java.util.Scanner;
 
 /**
  * Interfaz de texto del simulador.
- * Versión sin acentos y con validaciones de entrada.
+ * Version sin acentos y con validaciones de entrada.
  */
 public class MenuConsola {
     private final ServicioSimulacion servicio = new ServicioSimulacion();
     private final Scanner in = new Scanner(System.in);
 
+    /**
+     * Muestra el menu principal en consola y gestiona las opciones seleccionadas por el usuario.
+     */
     public void mostrar() {
         while (true) {
             System.out.println("\n=== SIMULADOR DE ATAQUES ===");
@@ -43,8 +46,8 @@ public class MenuConsola {
     }
 
     /**
-     * Opcion fuerza bruta con validaciones y valores por defecto cuando
-     * el usuario presiona Enter sin escribir nada.
+     * Ejecuta la opcion de ataque de fuerza bruta solicitando los parametros al usuario.
+     * Incluye validaciones de entrada y valores por defecto cuando el usuario presiona Enter.
      */
     private void opcionFuerzaBruta() {
         try {
@@ -89,8 +92,8 @@ public class MenuConsola {
     }
 
     /**
-     * Opcion diccionario: valida ruta y permisos, lee archivo, evita que se pase una
-     * cadena vacia para valores numericos usando helpers.
+     * Ejecuta la opcion de ataque de diccionario.
+     * Valida la ruta del archivo, verifica permisos, y evita valores vacios para los parametros numericos.
      */
     private void opcionDiccionario() {
         try {
@@ -146,6 +149,9 @@ public class MenuConsola {
         }
     }
 
+    /**
+     * Lista todas las simulaciones registradas mostrando sus datos principales.
+     */
     private void listar() {
         var sims = servicio.consultarSimulaciones();
         System.out.printf("%-6s %-14s %-8s %-12s %-10s %-12s\n",
@@ -158,6 +164,9 @@ public class MenuConsola {
         }
     }
 
+    /**
+     * Muestra el detalle de una simulacion especifica segun su ID.
+     */
     private void detalle() {
         try {
             System.out.print("ID de simulacion: ");
@@ -178,12 +187,19 @@ public class MenuConsola {
         }
     }
 
+    /**
+     * Calcula y muestra el hash SHA-256 de un texto ingresado por el usuario.
+     */
     private void hashDeTexto(){
         System.out.print("Texto a hashear: ");
         String t = in.nextLine();
         System.out.println("SHA-256 = " + ComparadorHash.sha256(t));
     }
 
+    /**
+     * Imprime el resultado de una simulacion finalizada.
+     * @param s objeto Simulacion con los datos del resultado
+     */
     private void imprimirResultado(Simulacion s){
         long durMs = (s.getFin().toEpochMilli()-s.getInicio().toEpochMilli());
         System.out.println("\n--- RESULTADO ---");
@@ -200,6 +216,9 @@ public class MenuConsola {
 
     /**
      * Lee un entero desde consola. Si el usuario pulsa Enter devuelve el valor por defecto.
+     * @param prompt mensaje que se muestra al usuario
+     * @param defecto valor por defecto si no se ingresa nada
+     * @return entero leido o valor por defecto
      */
     private int leerInt(String prompt, int defecto) {
         System.out.print(prompt);
@@ -213,7 +232,10 @@ public class MenuConsola {
     }
 
     /**
-     * Lee un long desde consola. Si el usuario pulsa Enter devuelve el valor por defecto.
+     * Lee un valor long desde consola. Si el usuario pulsa Enter devuelve el valor por defecto.
+     * @param prompt mensaje que se muestra al usuario
+     * @param defecto valor por defecto si no se ingresa nada
+     * @return valor long leido o el valor por defecto
      */
     private long leerLong(String prompt, long defecto) {
         System.out.print(prompt);
