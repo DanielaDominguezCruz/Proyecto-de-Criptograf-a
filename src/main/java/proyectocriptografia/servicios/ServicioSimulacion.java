@@ -12,22 +12,30 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Orquestador principal de simulaciones: configura, ejecuta, mide y persiste.
- * Esta versión es más robusta: detecta si el ataque no arranca, fuerza un muestreo
- * final y registra resultados aunque el ataque haya terminado rápidamente.
+ * Servicio que gestiona la ejecucion de simulaciones de ataques criptograficos.
+ * Configura, ejecuta, mide y persiste los resultados de las simulaciones.
  */
 public class ServicioSimulacion {
 
     private final Repositorio repo;
 
+    /**
+     * Constructor por defecto. Inicializa el repositorio MySQL.
+     */
     public ServicioSimulacion(){
         this.repo = new RepositorioMySQL();
     }
-    // Constructor alternativo para tests
+
+    /**
+     * Constructor alternativo para pruebas, permite inyectar un repositorio personalizado.
+     * @param repo implementacion de Repositorio a utilizar
+     */
     public ServicioSimulacion(Repositorio repo){ this.repo = repo; }
 
     /**
-     * Ejecuta una simulación de fuerza bruta, muestreando periódicamente y guardando la simulación.
+     * Ejecuta una simulacion de fuerza bruta. Mide el rendimiento y guarda muestras periodicas.
+     * @param p parametros de configuracion del ataque
+     * @return objeto Simulacion con los resultados obtenidos
      */
     public Simulacion simularFuerzaBruta(ParametrosAtaque p) {
         Simulacion s = crearSimulacionBase("FUERZA_BRUTA", p);
@@ -40,7 +48,6 @@ public class ServicioSimulacion {
         long inicio = System.currentTimeMillis();
         ataque.iniciar();
 
-        // Espera corta para comprobar que arranque (evita bucle infinito si no arrancó)
         waitForStart(ataque, 200);
 
         long ultimoMuestreo = 0;
@@ -48,7 +55,6 @@ public class ServicioSimulacion {
         while (ataque.estaEjecutando()) {
             dormir(pollingMs);
             long it = ataque.getIntentosRealizados();
-            // muestreo basado en "cada N intentos"
             if (p.maxIntentosMuestralesCada > 0) {
                 long muestraIndex = it / p.maxIntentosMuestralesCada;
                 if (muestraIndex > ultimoMuestreo) {
@@ -58,7 +64,6 @@ public class ServicioSimulacion {
             }
         }
 
-        // muestreo final: siempre guarda el último estado (si no se guardó nada antes)
         long itFinal = ataque.getIntentosRealizados();
         if (p.maxIntentosMuestralesCada <= 0 || itFinal == 0 || itFinal % p.maxIntentosMuestralesCada != 0) {
             guardarMuestra(id, itFinal, "<muestra-fb-final-" + itFinal + ">");
@@ -66,11 +71,13 @@ public class ServicioSimulacion {
 
         long fin = System.currentTimeMillis();
         completarYActualizar(s, ataque, inicio, fin);
-        return s; // devuelve lectura actualizada
+        return s;
     }
 
     /**
-     * Ejecuta una simulación de diccionario, muestreando periódicamente y guardando la simulación.
+     * Ejecuta una simulacion de diccionario. Mide el rendimiento y guarda muestras periodicas.
+     * @param p parametros de configuracion del ataque
+     * @return objeto Simulacion con los resultados obtenidos
      */
     public Simulacion simularDiccionario(ParametrosAtaque p) {
         Simulacion s = crearSimulacionBase("DICCIONARIO", p);
@@ -83,7 +90,6 @@ public class ServicioSimulacion {
         long inicio = System.currentTimeMillis();
         ataque.iniciar();
 
-        // Espera corta para comprobar que arranque
         waitForStart(ataque, 200);
 
         long ultimoMuestreo = 0;
@@ -100,10 +106,8 @@ public class ServicioSimulacion {
             }
         }
 
-        // muestreo final: guarda la última iteración (para que intentos_totales no quede 0)
         long itFinal = ataque.getIntentosRealizados();
         if (p.maxIntentosMuestralesCada <= 0 || itFinal == 0 || itFinal % p.maxIntentosMuestralesCada != 0) {
-            // si el ataque encontró la clave, la valoramos en el muestreo final
             String valor = ataque.getResultadoClave() != null ? ataque.getResultadoClave() : "<muestra-dic-final-" + itFinal + ">";
             guardarMuestra(id, itFinal, valor);
         }
@@ -114,7 +118,9 @@ public class ServicioSimulacion {
     }
 
     /**
-     * Si el ataque no entra en estado 'ejecutando' en un lapso corto, lo avisamos.
+     * Espera hasta que el ataque entre en estado de ejecucion o se alcance el tiempo maximo.
+     * @param ataque instancia del ataque a monitorear
+     * @param maxWaitMs tiempo maximo de espera en milisegundos
      */
     private void waitForStart(Ataque ataque, long maxWaitMs) {
         long t0 = System.currentTimeMillis();
@@ -126,6 +132,13 @@ public class ServicioSimulacion {
         }
     }
 
+    /**
+     * Completa los datos finales de la simulacion y actualiza su registro en el repositorio.
+     * @param s simulacion a actualizar
+     * @param ataque instancia del ataque ejecutado
+     * @param inicio marca de tiempo de inicio
+     * @param fin marca de tiempo de finalizacion
+     */
     private void completarYActualizar(Simulacion s, Ataque ataque, long inicio, long fin){
         s.setFin(Instant.ofEpochMilli(fin));
         s.setIntentosTotales(ataque.getIntentosRealizados());
@@ -135,6 +148,12 @@ public class ServicioSimulacion {
         repo.actualizarSimulacion(s);
     }
 
+    /**
+     * Guarda un intento muestral asociado a una simulacion.
+     * @param idSim identificador de la simulacion
+     * @param indice numero de intento
+     * @param valor valor propuesto en el intento
+     */
     private void guardarMuestra(Long idSim, long indice, String valor){
         try {
             IntentoMuestral im = new IntentoMuestral();
@@ -148,6 +167,12 @@ public class ServicioSimulacion {
         }
     }
 
+    /**
+     * Crea un objeto Simulacion basico inicializado con tipo, parametros y hora de inicio.
+     * @param tipo tipo de simulacion (ej. FUERZA_BRUTA o DICCIONARIO)
+     * @param p parametros del ataque
+     * @return instancia inicial de Simulacion
+     */
     private static Simulacion crearSimulacionBase(String tipo, ParametrosAtaque p){
         Simulacion s = new Simulacion();
         s.setTipo(tipo);
@@ -157,10 +182,24 @@ public class ServicioSimulacion {
         return s;
     }
 
+    /**
+     * Suspende la ejecucion del hilo actual por el tiempo indicado.
+     * @param ms milisegundos de espera
+     */
     private static void dormir(long ms){
         try { TimeUnit.MILLISECONDS.sleep(ms); } catch (InterruptedException ignored){}
     }
 
+    /**
+     * Consulta la lista de simulaciones almacenadas en el repositorio.
+     * @return lista de simulaciones registradas
+     */
     public List<Simulacion> consultarSimulaciones(){ return repo.listarSimulaciones(); }
+
+    /**
+     * Consulta los intentos muestrales asociados a una simulacion.
+     * @param idSimulacion identificador de la simulacion
+     * @return lista de intentos muestrales registrados
+     */
     public List<IntentoMuestral> consultarDetalle(long idSimulacion){ return repo.listarIntentos(idSimulacion); }
 }
