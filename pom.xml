@@ -13,7 +13,7 @@
   <description>Simulador de ataques (fuerza bruta y diccionario)</description>
 
   <properties>
-    <!-- compilacion -->
+    <!-- compilación -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>21</maven.compiler.release>
 
@@ -22,7 +22,7 @@
     <surefire.version>3.2.5</surefire.version>
     <mysql.connector.version>8.3.0</mysql.connector.version>
 
-    <!-- clase main para exec plugin -->
+    <!-- clase main para exec/jar -->
     <exec.mainClass>proyectocriptografia.consola.MainSimulador</exec.mainClass>
   </properties>
 
@@ -34,7 +34,7 @@
       <version>${mysql.connector.version}</version>
     </dependency>
 
-    <!-- JUnit 5 (test) -->
+    <!-- JUnit 5 -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -47,7 +47,6 @@
       <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>
@@ -68,11 +67,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire.version}</version>
         <configuration>
-          <!-- evita problemas con module-path en IDEs con JDK 9+ -->
           <useModulePath>false</useModulePath>
-          <!-- muestra ejecucion y stacktraces en la salida -->
-          <forkCount>1</forkCount>
-          <reuseForks>true</reuseForks>
         </configuration>
       </plugin>
 
@@ -86,18 +81,7 @@
         </configuration>
       </plugin>
 
-      <!-- Javadoc plugin -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.6.2</version>
-        <configuration>
-          <encoding>${project.build.sourceEncoding}</encoding>
-          <additionalparam>-Xdoclint:none</additionalparam>
-        </configuration>
-      </plugin>
-
-      <!-- Optional: configurar el manifest del JAR (Main-Class) -->
+      <!-- JAR con Main-Class -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -110,7 +94,6 @@
           </archive>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
 </project>
