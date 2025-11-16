@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Clase que implementa el menu de consola para ejecutar y consultar simulaciones
- * de ataques de fuerza bruta y diccionario.
+ * Menú de consola para ejecutar/consultar simulaciones de ataques.
+ * Comentarios mínimos: cada método documentado con su propósito esencial.
  */
 public class MenuConsola {
     private final ServicioSimulacion servicio = new ServicioSimulacion();
     private final Scanner in = new Scanner(System.in);
 
     /**
-     * Muestra el menu principal en consola y gestiona las opciones seleccionadas por el usuario.
+     * Muestra el menú principal y procesa las opciones hasta que se sale.
      */
     public void mostrar() {
         while (true) {
@@ -39,15 +39,17 @@ public class MenuConsola {
                 case "3" -> listar();
                 case "4" -> detalle();
                 case "5" -> hashDeTexto();
-                case "0" -> { System.out.println("Adios."); return; }
+                case "0" -> {
+                    System.out.println("Adios.");
+                    return;
+                }
                 default -> System.out.println("Opcion invalida.");
             }
         }
     }
 
     /**
-     * Ejecuta el ataque de fuerza bruta solicitando los parametros al usuario.
-     * Incluye validaciones de entrada y valores por defecto cuando el usuario presiona Enter.
+     * Pide parámetros y ejecuta la simulación de fuerza bruta.
      */
     private void opcionFuerzaBruta() {
         try {
@@ -92,8 +94,7 @@ public class MenuConsola {
     }
 
     /**
-     * Ejecuta el ataque de diccionario solicitando los parametros al usuario.
-     * Valida la ruta del archivo, verifica permisos y evita valores vacios para parametros numericos.
+     * Pide ruta de diccionario, la valida y ejecuta la simulación por diccionario.
      */
     private void opcionDiccionario() {
         try {
@@ -125,29 +126,30 @@ public class MenuConsola {
                     System.out.println("La ruta indicada es un directorio, debe ser un archivo .txt: " + ruta);
                     continue;
                 }
-                break;
+                // ruta válida en p
+                List<String> dic = Files.readAllLines(p);
+
+                long muestral = leerLong("Guardar intento muestral cada N (0=desactiva): ", 0L);
+                long limite = leerLong("Limite de tiempo en ms (0=sin limite): ", 0L);
+
+                ParametrosAtaque parametros = new ParametrosAtaque();
+                parametros.hashObjetivo = hash;
+                parametros.diccionario = dic;
+                parametros.maxIntentosMuestralesCada = muestral;
+                parametros.limiteTiempoMs = limite;
+
+                Simulacion s = servicio.simularDiccionario(parametros);
+                imprimirResultado(s);
+                return;
             }
 
-            List<String> dic = Files.readAllLines(Path.of(ruta));
-
-            long muestral = leerLong("Guardar intento muestral cada N (0=desactiva): ", 0L);
-            long limite = leerLong("Limite de tiempo en ms (0=sin limite): ", 0L);
-
-            ParametrosAtaque p = new ParametrosAtaque();
-            p.hashObjetivo = hash;
-            p.diccionario = dic;
-            p.maxIntentosMuestralesCada = muestral;
-            p.limiteTiempoMs = limite;
-
-            Simulacion s = servicio.simularDiccionario(p);
-            imprimirResultado(s);
         } catch (Exception e) {
             System.out.println("Error cargando diccionario: " + e.getMessage());
         }
     }
 
     /**
-     * Lista las simulaciones registradas mostrando su informacion basica.
+     * Muestra una tabla con las simulaciones registradas.
      */
     private void listar() {
         var sims = servicio.consultarSimulaciones();
@@ -162,7 +164,7 @@ public class MenuConsola {
     }
 
     /**
-     * Muestra los intentos muestrales de una simulacion segun su ID.
+     * Muestra los intentos muestrales de una simulación por su ID.
      */
     private void detalle() {
         try {
@@ -185,7 +187,7 @@ public class MenuConsola {
     }
 
     /**
-     * Calcula el hash SHA-256 de un texto ingresado por el usuario y lo muestra por consola.
+     * Calcula y muestra el SHA-256 del texto ingresado.
      */
     private void hashDeTexto(){
         System.out.print("Texto a hashear: ");
@@ -194,29 +196,28 @@ public class MenuConsola {
     }
 
     /**
-     * Imprime el resultado completo de una simulacion.
-     * @param s objeto Simulacion con los datos del resultado
+     * Imprime el resultado de una simulación; evita NPE si inicio/fin son null.
+     * @param s simulación cuyo resultado se imprimirá
      */
     private void imprimirResultado(Simulacion s){
-        long durMs = (s.getFin().toEpochMilli()-s.getInicio().toEpochMilli());
+        long durMs = 0;
+        if (s != null && s.getInicio() != null && s.getFin() != null) {
+            durMs = s.getFin().toEpochMilli() - s.getInicio().toEpochMilli();
+        }
         System.out.println("\n--- RESULTADO ---");
-        System.out.println("ID: " + s.getId());
-        System.out.println("Tipo: " + s.getTipo());
-        System.out.println("Objetivo: " + s.getObjetivoHash());
-        System.out.println("Parametros: " + s.getParametros());
-        System.out.println("Exito: " + s.isExito());
-        System.out.println("Clave hallada: " + s.getClaveHallada());
-        System.out.println("Intentos totales: " + s.getIntentosTotales());
-        System.out.println("Intentos/seg: " + Formato.double2(s.getIntentosPorSegundo()));
+        System.out.println("ID: " + (s==null ? "n/a" : s.getId()));
+        System.out.println("Tipo: " + (s==null ? "n/a" : s.getTipo()));
+        System.out.println("Objetivo: " + (s==null ? "n/a" : s.getObjetivoHash()));
+        System.out.println("Parametros: " + (s==null ? "n/a" : s.getParametros()));
+        System.out.println("Exito: " + (s==null ? false : s.isExito()));
+        System.out.println("Clave hallada: " + (s==null ? "n/a" : s.getClaveHallada()));
+        System.out.println("Intentos totales: " + (s==null ? 0 : s.getIntentosTotales()));
+        System.out.println("Intentos/seg: " + (s==null ? "0.00" : Formato.double2(s.getIntentosPorSegundo())));
         System.out.println("Duracion: " + Formato.msAHumano(durMs));
     }
 
     /**
-     * Lee un numero entero desde la entrada estandar.
-     * Si el usuario presiona Enter, devuelve el valor por defecto.
-     * @param prompt mensaje mostrado al usuario
-     * @param defecto valor por defecto si no se ingresa nada
-     * @return entero ingresado o el valor por defecto
+     * Lee un entero; si se presiona Enter devuelve el valor por defecto.
      */
     private int leerInt(String prompt, int defecto) {
         System.out.print(prompt);
@@ -230,11 +231,7 @@ public class MenuConsola {
     }
 
     /**
-     * Lee un numero long desde la entrada estandar.
-     * Si el usuario presiona Enter, devuelve el valor por defecto.
-     * @param prompt mensaje mostrado al usuario
-     * @param defecto valor por defecto si no se ingresa nada
-     * @return numero long ingresado o el valor por defecto
+     * Lee un long; si se presiona Enter devuelve el valor por defecto.
      */
     private long leerLong(String prompt, long defecto) {
         System.out.print(prompt);
