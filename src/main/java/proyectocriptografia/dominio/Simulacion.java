@@ -38,6 +38,9 @@ public class Simulacion {
     /** Promedio de intentos realizados por segundo. */
     private double intentosPorSegundo;
 
+    /** Duracion de la simulacion en nanosegundos (medida con System.nanoTime()). */
+    private long duracionNs = 0L;
+
     /**
      * Obtiene el identificador unico de la simulacion.
      * @return identificador de la simulacion
@@ -157,6 +160,18 @@ public class Simulacion {
      * @param intentosPorSegundo intentos por segundo
      */
     public void setIntentosPorSegundo(double intentosPorSegundo) { this.intentosPorSegundo = intentosPorSegundo; }
+
+    /**
+     * Obtiene la duracion de la simulacion en nanosegundos.
+     * @return duracion en nanosegundos
+     */
+    public long getDuracionNs() { return duracionNs; }
+
+    /**
+     * Establece la duracion de la simulacion en nanosegundos.
+     * @param duracionNs duracion en nanosegundos
+     */
+    public void setDuracionNs(long duracionNs) { this.duracionNs = duracionNs; }
 
     /**
      * Devuelve una representacion en texto del objeto Simulacion.
