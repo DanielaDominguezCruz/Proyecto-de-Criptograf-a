@@ -13,7 +13,6 @@ import java.util.Scanner;
 
 /**
  * Menú de consola para ejecutar/consultar simulaciones de ataques.
- * Comentarios mínimos: cada método documentado con su propósito esencial.
  */
 public class MenuConsola {
     private final ServicioSimulacion servicio = new ServicioSimulacion();
@@ -49,49 +48,106 @@ public class MenuConsola {
     }
 
     /**
-     * Pide parámetros y ejecuta la simulación de fuerza bruta.
-     */
-    private void opcionFuerzaBruta() {
-        try {
-            System.out.print("Hash objetivo SHA-256 (hex): ");
-            String hash = in.nextLine().trim();
-            if (hash.isEmpty()) {
-                System.out.println("Hash vacio: operacion cancelada.");
-                return;
-            }
-
-            System.out.print("Alfabeto (ej. abcdef0123456789): ");
-            String alfabeto = in.nextLine().trim();
-            if (alfabeto.isEmpty()) {
-                System.out.println("Alfabeto vacio: operacion cancelada.");
-                return;
-            }
-
-            int min = leerInt("Longitud minima: ", 1);
-            int max = leerInt("Longitud maxima: ", 3);
-            if (min < 1) min = 1;
-            if (max < min) {
-                System.out.println("Longitud maxima menor que minima. Se ajusta max = min.");
-                max = min;
-            }
-
-            long muestral = leerLong("Guardar intento muestral cada N (0=desactiva) [0]: ", 0L);
-            long limite = leerLong("Limite de tiempo en ms (0=sin limite) [0]: ", 0L);
-
-            ParametrosAtaque p = new ParametrosAtaque();
-            p.hashObjetivo = hash;
-            p.alfabeto = alfabeto;
-            p.minLongitud = min;
-            p.maxLongitud = max;
-            p.maxIntentosMuestralesCada = muestral;
-            p.limiteTiempoMs = limite;
-
-            Simulacion s = servicio.simularFuerzaBruta(p);
-            imprimirResultado(s);
-        } catch (Exception e) {
-            System.out.println("Error en parametros: " + e.getMessage());
+ * Pide parámetros y ejecuta la simulación de fuerza bruta.
+ * Mejora: refuerza que el alfabeto puede ser letras o números (o ambos),
+ * admite atajos (NUMEROS, DIGITOS, LETRAS) y normaliza/elimina duplicados.
+ */
+private void opcionFuerzaBruta() {
+    try {
+        System.out.print("Hash objetivo SHA-256 (hex): ");
+        String hash = in.nextLine().trim();
+        if (hash.isEmpty()) {
+            System.out.println("Hash vacio: operacion cancelada.");
+            return;
         }
+
+        // Atajos y alfabetos por defecto
+        final String ALFABETO_LETRAS = "abcdefghijklmnopqrstuvwxyz";
+        final String ALFABETO_DIGITOS = "0123456789";
+        final String ALFABETO_POR_DEFECTO = ALFABETO_LETRAS;
+
+        String alfabeto = null;
+        if (in.hasNextLine()) in.nextLine();
+        while (true) {
+            System.out.print("Alfabeto (ej. abcdef0123456789). Puedes escribir 'NUMEROS' o 'LETRAS' o presionar ENTER para usar por defecto: ");
+            String entrada = in.nextLine().trim();
+
+            if (entrada.equalsIgnoreCase("CANCELAR")) {
+                System.out.println("Operacion cancelada por el usuario.");
+                return;
+            }
+
+            if (entrada.isEmpty()) {
+                alfabeto = ALFABETO_POR_DEFECTO;
+                System.out.println("Usando alfabeto por defecto: " + alfabeto);
+            } else if (entrada.equalsIgnoreCase("NUMEROS") || entrada.equalsIgnoreCase("NUM") || entrada.equalsIgnoreCase("DIGITOS")) {
+                alfabeto = ALFABETO_DIGITOS;
+                System.out.println("Usando alfabeto de dígitos: " + alfabeto);
+            } else if (entrada.equalsIgnoreCase("LETRAS")) {
+                alfabeto = ALFABETO_LETRAS;
+                System.out.println("Usando alfabeto de letras: " + alfabeto);
+            } else {
+                // limpiar espacios y eliminar duplicados manteniendo orden
+                StringBuilder sb = new StringBuilder();
+                boolean[] seen = new boolean[Character.MAX_VALUE];
+                for (char c : entrada.toCharArray()) {
+                    if (Character.isWhitespace(c)) continue; // ignorar espacios
+                    if (!seen[c]) {
+                        sb.append(c);
+                        seen[c] = true;
+                    }
+                }
+                alfabeto = sb.toString();
+            }
+
+            // validar que el alfabeto final tenga al menos 1 caracter
+            if (alfabeto == null || alfabeto.isEmpty()) {
+                System.out.println("Alfabeto invalido (vacío). Introduce letras, numeros o combinacion, o escribe CANCELAR para salir.");
+                continue;
+            }
+
+            // validación adicional: asegurarse que contiene al menos una letra o dígito visible
+            boolean tieneVisible = false;
+            for (char c : alfabeto.toCharArray()) {
+                if (!Character.isISOControl(c)) { tieneVisible = true; break; }
+            }
+            if (!tieneVisible) {
+                System.out.println("Alfabeto invalido. Debe contener caracteres imprimibles (letras o numeros). Intenta de nuevo.");
+                alfabeto = null;
+                continue;
+            }
+
+            // alfabeto aceptado
+            break;
+        }
+
+        // validación con re-pregunta y defaults para longitudes
+        int min = leerIntConDefault("Longitud minima", 1, 1, 100);
+        int max = leerIntConDefault("Longitud maxima", 3, min, 100);
+        if (min < 1) min = 1;
+        if (max < min) {
+            System.out.println("Longitud maxima menor que minima. Se ajusta max = min.");
+            max = min;
+        }
+
+        long muestral = leerLongConDefault("Guardar intento muestral cada N (0=desactiva)", 0L, 0L, Long.MAX_VALUE);
+        long limite = leerLongConDefault("Limite de tiempo en ms (0=sin limite)", 0L, 0L, Long.MAX_VALUE);
+
+        ParametrosAtaque p = new ParametrosAtaque();
+        p.hashObjetivo = hash;
+        p.alfabeto = alfabeto;
+        p.minLongitud = min;
+        p.maxLongitud = max;
+        p.maxIntentosMuestralesCada = muestral;
+        p.limiteTiempoMs = limite;
+
+        Simulacion s = servicio.simularFuerzaBruta(p);
+        imprimirResultado(s);
+    } catch (Exception e) {
+        System.out.println("Error en parametros: " + e.getMessage());
     }
+}
+
 
     /**
      * Pide ruta de diccionario, la valida y ejecuta la simulación por diccionario.
@@ -129,8 +185,8 @@ public class MenuConsola {
                 // ruta válida en p
                 List<String> dic = Files.readAllLines(p);
 
-                long muestral = leerLong("Guardar intento muestral cada N (0=desactiva): ", 0L);
-                long limite = leerLong("Limite de tiempo en ms (0=sin limite): ", 0L);
+                long muestral = leerLongConDefault("Guardar intento muestral cada N (0=desactiva)", 0L, 0L, Long.MAX_VALUE);
+                long limite = leerLongConDefault("Limite de tiempo en ms (0=sin limite)", 0L, 0L, Long.MAX_VALUE);
 
                 ParametrosAtaque parametros = new ParametrosAtaque();
                 parametros.hashObjetivo = hash;
@@ -156,7 +212,11 @@ public class MenuConsola {
         System.out.printf("%-6s %-14s %-8s %-12s %-10s %-12s\n",
                 "ID","TIPO","EXITO","INTENTOS","IPS","DURACION");
         for (var s : sims) {
-            long durMs = (s.getFin()==null? 0 : (s.getFin().toEpochMilli()-s.getInicio().toEpochMilli()));
+            long durMs = 0;
+            if (s != null) {
+                if (s.getDuracionNs() > 0) durMs = s.getDuracionNs() / 1_000_000L;
+                else if (s.getInicio() != null && s.getFin() != null) durMs = s.getFin().toEpochMilli() - s.getInicio().toEpochMilli();
+            }
             System.out.printf("%-6d %-14s %-8b %-12d %-10s %-12s\n",
                     s.getId(), s.getTipo(), s.isExito(), s.getIntentosTotales(),
                     Formato.double2(s.getIntentosPorSegundo()), Formato.msAHumano(durMs));
@@ -201,8 +261,9 @@ public class MenuConsola {
      */
     private void imprimirResultado(Simulacion s){
         long durMs = 0;
-        if (s != null && s.getInicio() != null && s.getFin() != null) {
-            durMs = s.getFin().toEpochMilli() - s.getInicio().toEpochMilli();
+        if (s != null) {
+            if (s.getDuracionNs() > 0) durMs = s.getDuracionNs() / 1_000_000L;
+            else if (s.getInicio() != null && s.getFin() != null) durMs = s.getFin().toEpochMilli() - s.getInicio().toEpochMilli();
         }
         System.out.println("\n--- RESULTADO ---");
         System.out.println("ID: " + (s==null ? "n/a" : s.getId()));
@@ -218,29 +279,55 @@ public class MenuConsola {
 
     /**
      * Lee un entero; si se presiona Enter devuelve el valor por defecto.
+     * Si la entrada es inválida (no entero) vuelve a pedir; si se ingresa un entero
+     * fuera del rango min..max (si se especifica), muestra el mensaje y vuelve a pedir.
+     *
+     * Uso:
+     *  int min = leerIntConDefault("Longitud minima", 1, 1, 100);
+     *  int max = leerIntConDefault("Longitud maxima", 3, min, 100);
+     *
+     * @param prompt texto que se muestra (sin el sufijo del default)
+     * @param defecto valor que se usa si el usuario presiona Enter
+     * @param min valor mínimo aceptable (incluir Integer.MIN_VALUE si no hay mínimo)
+     * @param max valor máximo aceptable (incluir Integer.MAX_VALUE si no hay máximo)
+     * @return entero validado
      */
-    private int leerInt(String prompt, int defecto) {
-        System.out.print(prompt);
-        String s = in.nextLine().trim();
-        if (s.isEmpty()) return defecto;
-        try { return Integer.parseInt(s); }
-        catch (NumberFormatException e) {
-            System.out.println("Valor invalido. Usando " + defecto + ".");
-            return defecto;
+    private int leerIntConDefault(String prompt, int defecto, int min, int max) {
+        while (true) {
+            System.out.print(prompt + " [" + defecto + "]: ");
+            String s = in.nextLine().trim();
+            if (s.isEmpty()) return defecto;
+            try {
+                int v = Integer.parseInt(s);
+                if (v < min || v > max) {
+                    System.out.printf("Valor fuera de rango (%d - %d). Intenta de nuevo.%n", min, max);
+                    continue;
+                }
+                return v;
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada invalida. Introduce un numero entero o presiona Enter para usar el valor por defecto.");
+            }
         }
     }
 
     /**
-     * Lee un long; si se presiona Enter devuelve el valor por defecto.
+     * Lee un long; similar a leerIntConDefault.
      */
-    private long leerLong(String prompt, long defecto) {
-        System.out.print(prompt);
-        String s = in.nextLine().trim();
-        if (s.isEmpty()) return defecto;
-        try { return Long.parseLong(s); }
-        catch (NumberFormatException e) {
-            System.out.println("Valor invalido. Usando " + defecto + ".");
-            return defecto;
+    private long leerLongConDefault(String prompt, long defecto, long min, long max) {
+        while (true) {
+            System.out.print(prompt + " [" + defecto + "]: ");
+            String s = in.nextLine().trim();
+            if (s.isEmpty()) return defecto;
+            try {
+                long v = Long.parseLong(s);
+                if (v < min || v > max) {
+                    System.out.printf("Valor fuera de rango (%d - %d). Intenta de nuevo.%n", min, max);
+                    continue;
+                }
+                return v;
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada invalida. Introduce un numero entero o presiona Enter para usar el valor por defecto.");
+            }
         }
     }
 }
