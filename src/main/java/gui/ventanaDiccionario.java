@@ -1,86 +1,80 @@
 package gui;
 
-import javax.swing.*;
-import modelo.AtaqueDiccionario;
 import proyectocriptografia.ataques.ParametrosAtaque;
+import proyectocriptografia.dominio.Simulacion;
+import proyectocriptografia.servicios.ServicioSimulacion;
+import proyectocriptografia.util.Formato;
+
+import javax.swing.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Ventana gráfica para ejecutar un ataque de diccionario contra un hash objetivo.
+ * Ventana para ejecutar ataques de diccionario desde la interfaz gráfica.
+ * Carga un archivo de diccionario y muestra el resultado final de la simulación.
  */
 public class ventanaDiccionario extends JFrame {
 
-    private JTextField txtHash, txtDiccionario;
-    private JTextArea txtSalida;
+    private final ServicioSimulacion servicio = new ServicioSimulacion();
 
-    /**
-     * Constructor de la ventana que configura el entorno gráfico del ataque de diccionario.
-     */
     public ventanaDiccionario() {
-        setTitle("Ataque de Diccionario");
-        setSize(600, 500);
+        setTitle("Ataque por Diccionario");
+        setSize(600, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        txtHash = new JTextField(40); // Campo para ingresar el hash objetivo
-        txtDiccionario = new JTextField(30); // Campo para mostrar la ruta del diccionario
-        txtSalida = new JTextArea(15, 50); // Área para mostrar resultados del ataque
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JButton btnExaminar = new JButton("Examinar..."); // Botón para seleccionar archivo de diccionario
-        JButton btnIniciar = new JButton("Iniciar Ataque"); // Botón para ejecutar el ataque
+        JTextField txtHash = new JTextField(30);
+        JTextField txtRuta = new JTextField(30);
+        JTextField txtMuestral = new JTextField(10);
+        JTextField txtLimite = new JTextField(10);
+        JTextArea areaResultado = new JTextArea(10, 50);
+        areaResultado.setEditable(false);
+        JButton btnAtacar = new JButton("Iniciar Ataque");
 
-        JPanel panel = new JPanel(); // Panel principal que contiene todos los elementos
-        panel.add(new JLabel("Hash objetivo:")); // Etiqueta para el hash
-        panel.add(txtHash);
-        panel.add(new JLabel("Diccionario:")); // Etiqueta para el archivo diccionario
-        panel.add(txtDiccionario);
-        panel.add(btnExaminar);
-        panel.add(btnIniciar);
-        panel.add(new JScrollPane(txtSalida)); // Área de salida con scroll
+        panel.add(new JLabel("Hash objetivo:")); panel.add(txtHash);
+        panel.add(new JLabel("Ruta diccionario:")); panel.add(txtRuta);
+        panel.add(new JLabel("Guardar intento muestral cada N:")); panel.add(txtMuestral);
+        panel.add(new JLabel("Limite tiempo ms:")); panel.add(txtLimite);
+        panel.add(btnAtacar);
+        panel.add(new JScrollPane(areaResultado));
 
         add(panel);
 
-        // Acción para seleccionar archivo de diccionario
-        btnExaminar.addActionListener(e -> {
-            JFileChooser fc = new JFileChooser();
-            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                txtDiccionario.setText(fc.getSelectedFile().getAbsolutePath());
+        btnAtacar.addActionListener(e -> {
+            try {
+                String hash = txtHash.getText().trim();
+                Path pArchivo = Path.of(txtRuta.getText().trim());
+                if (!Files.exists(pArchivo) || !Files.isReadable(pArchivo)) {
+                    areaResultado.setText("Archivo no encontrado o ilegible.");
+                    return;
+                }
+                List<String> dic = Files.readAllLines(pArchivo);
+
+                ParametrosAtaque p = new ParametrosAtaque();
+                p.hashObjetivo = hash;
+                p.diccionario = dic;
+                p.maxIntentosMuestralesCada = Long.parseLong(txtMuestral.getText().trim());
+                p.limiteTiempoMs = Long.parseLong(txtLimite.getText().trim());
+
+                Simulacion s = servicio.simularDiccionario(p);
+
+                areaResultado.setText("--- RESULTADO ---\n" +
+                        "ID: " + s.getId() + "\n" +
+                        "Tipo: " + s.getTipo() + "\n" +
+                        "Hash objetivo: " + s.getObjetivoHash() + "\n" +
+                        "Clave hallada: " + s.getClaveHallada() + "\n" +
+                        "Intentos totales: " + s.getIntentosTotales() + "\n" +
+                        "Intentos/seg: " + Formato.double2(s.getIntentosPorSegundo()) + "\n" +
+                        "Éxito: " + s.isExito()
+                );
+
+            } catch (Exception ex) {
+                areaResultado.setText("Error: " + ex.getMessage());
             }
         });
-
-        // Acción para iniciar el ataque
-        btnIniciar.addActionListener(e -> ejecutarAtaque());
-    }
-
-    /**
-     * Ejecuta el ataque de diccionario usando los parámetros ingresados por el usuario.
-     */
-    private void ejecutarAtaque() {
-        try {
-            txtSalida.setText("Cargando diccionario...\n");
-
-            List<String> dic = Files.readAllLines(Paths.get(txtDiccionario.getText())); // Lee el diccionario línea por línea
-
-            ParametrosAtaque p = new ParametrosAtaque(); // Configuración de ataque
-            p.diccionario = dic;
-            p.hashObjetivo = txtHash.getText();
-            p.limiteTiempoMs = 0;
-
-            AtaqueDiccionario ataque = new AtaqueDiccionario(); // Instancia del ataque
-            ataque.configurar(p);
-
-            txtSalida.append("Ejecutando...\n");
-            ataque.run(); // Realiza el ataque
-
-            txtSalida.append("\nRESULTADO:\n");
-            txtSalida.append("Palabra encontrada: " + ataque.getResultadoClave() + "\n");
-            txtSalida.append("Intentos: " + ataque.getIntentosRealizados() + "\n");
-
-        } catch (Exception ex) {
-            txtSalida.append("ERROR: " + ex.getMessage());
-        }
     }
 }
-
