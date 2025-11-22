@@ -1,68 +1,93 @@
 package gui;
 
-import javax.swing.*;
-import modelo.AtaqueFuerzaBruta;
 import proyectocriptografia.ataques.ParametrosAtaque;
+import proyectocriptografia.dominio.Simulacion;
+import proyectocriptografia.servicios.ServicioSimulacion;
+import proyectocriptografia.util.Formato;
+
+import javax.swing.*;
+import java.awt.*;
 
 /**
- * Ventana gráfica para ejecutar un ataque de fuerza bruta sobre un hash objetivo.
+ * Ventana para ejecutar ataques de fuerza bruta desde la interfaz gráfica.
+ * Recibe parámetros de alfabeto y longitudes, y muestra el resultado final.
  */
 public class ventanaFuerzaBruta extends JFrame {
 
-    private JTextField txtHash;
-    private JTextArea txtResultado;
+    private final ServicioSimulacion servicio = new ServicioSimulacion();
 
-    /**
-     * Constructor que configura la interfaz del ataque de fuerza bruta.
-     */
     public ventanaFuerzaBruta() {
-        setTitle("Ataque de Fuerza Bruta"); // Título de la ventana
-        setSize(500, 400); // Tamaño de la ventana
-        setLocationRelativeTo(null); // Centra la ventana
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Cierra solo esta ventana
+        setTitle("Ataque de Fuerza Bruta");
+        setSize(600, 400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        txtHash = new JTextField(40); // Campo para escribir el hash objetivo
-        txtResultado = new JTextArea(10, 50); // Área donde se muestran los resultados
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5,5,5,5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JButton btnIniciar = new JButton("Iniciar"); // Botón para ejecutar el ataque
+        JTextField txtHash = new JTextField(30);
+        JTextField txtAlfabeto = new JTextField(20);
+        JTextField txtMin = new JTextField(5);
+        JTextField txtMax = new JTextField(5);
+        JTextField txtMuestral = new JTextField(10);
+        JTextField txtLimite = new JTextField(10);
+        JTextArea areaResultado = new JTextArea(10, 50);
+        areaResultado.setEditable(false);
+        JButton btnAtacar = new JButton("Iniciar Ataque");
 
-        JPanel panel = new JPanel(); // Panel contenedor
-        panel.add(new JLabel("Hash objetivo:")); // Etiqueta del texto del hash
-        panel.add(txtHash);
-        panel.add(btnIniciar);
-        panel.add(new JScrollPane(txtResultado)); // Área de salida con scroll
+        gbc.gridx = 0; gbc.gridy = 0; panel.add(new JLabel("Hash objetivo:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 0; panel.add(txtHash, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; panel.add(new JLabel("Alfabeto:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 1; panel.add(txtAlfabeto, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; panel.add(new JLabel("Longitud mínima:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 2; panel.add(txtMin, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; panel.add(new JLabel("Longitud máxima:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 3; panel.add(txtMax, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4; panel.add(new JLabel("Guardar intento muestral cada N:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 4; panel.add(txtMuestral, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 5; panel.add(new JLabel("Limite tiempo ms:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 5; panel.add(txtLimite, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; panel.add(btnAtacar, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
+        panel.add(new JScrollPane(areaResultado), gbc);
 
         add(panel);
 
-        // Acción del botón para iniciar el ataque
-        btnIniciar.addActionListener(e -> iniciar());
-    }
+        btnAtacar.addActionListener(e -> {
+            try {
+                ParametrosAtaque p = new ParametrosAtaque();
+                p.hashObjetivo = txtHash.getText().trim();
+                p.alfabeto = txtAlfabeto.getText().trim();
+                p.minLongitud = Integer.parseInt(txtMin.getText().trim());
+                p.maxLongitud = Integer.parseInt(txtMax.getText().trim());
+                p.maxIntentosMuestralesCada = Long.parseLong(txtMuestral.getText().trim());
+                p.limiteTiempoMs = Long.parseLong(txtLimite.getText().trim());
 
-    /**
-     * Ejecuta el ataque de fuerza bruta configurando los parámetros
-     * y mostrando el resultado en el área de texto.
-     */
-    private void iniciar() {
-        try {
-            txtResultado.setText("Iniciando ataque...\n");
+                Simulacion s = servicio.simularFuerzaBruta(p);
 
-            ParametrosAtaque p = new ParametrosAtaque(); // Parámetros del ataque
-            p.hashObjetivo = txtHash.getText();
-            p.alfabeto = "abcdefghijklmnopqrstuvwxyz"; // Conjunto de caracteres usados
-            p.minLongitud = 1; // Longitud mínima de la clave
-            p.maxLongitud = 5; // Longitud máxima de la clave
-            p.limiteTiempoMs = 0; // Sin límite de tiempo
+                areaResultado.setText("--- RESULTADO ---\n" +
+                        "ID: " + s.getId() + "\n" +
+                        "Tipo: " + s.getTipo() + "\n" +
+                        "Hash objetivo: " + s.getObjetivoHash() + "\n" +
+                        "Clave hallada: " + s.getClaveHallada() + "\n" +
+                        "Intentos totales: " + s.getIntentosTotales() + "\n" +
+                        "Intentos/seg: " + Formato.double2(s.getIntentosPorSegundo()) + "\n" +
+                        "Éxito: " + s.isExito()
+                );
 
-            AtaqueFuerzaBruta fb = new AtaqueFuerzaBruta(); // Instancia del ataque
-            fb.configurar(p);
-
-            fb.run(); // Ejecuta el ataque de manera bloqueante
-
-            txtResultado.append("Clave encontrada: " + fb.getResultadoClave() + "\n");
-            txtResultado.append("Intentos: " + fb.getIntentosRealizados() + "\n");
-
-        } catch (Exception ex) {
-            txtResultado.append("ERROR: " + ex.getMessage());
-        }
+            } catch (Exception ex) {
+                areaResultado.setText("Error: " + ex.getMessage());
+            }
+        });
     }
 }
